@@ -19,12 +19,12 @@ class WPS_test(QWidget):
         self.setGeometry(300, 300, 300, 400)
         self.setWindowTitle('WPS test')
 
-        self.trick_button = QPushButton('Новый тест', self)
-        self.trick_button.setGeometry(75, 150, 150, 30)
-        self.trick_button.clicked.connect(self.new)
+        self.testbtn = QPushButton('Новый тест', self)
+        self.testbtn.setGeometry(75, 150, 150, 30)
+        self.testbtn.clicked.connect(self.newTest)
 
         self.text = QTextEdit(self)
-        self.text.setGeometry(50, 140, 300, 190)
+        self.text.setGeometry(50, 160, 300, 190)
 
         self.btn = QPushButton("Начать", self)
         self.btn.setGeometry(100, 100, 200, 30)
@@ -66,6 +66,9 @@ class WPS_test(QWidget):
         self.lab3.setGeometry(52, 175, 300, 20)
         self.lab3.setStyleSheet("""font-family: "Courier New", monospace;""")
 
+        self.acclab = QLabel("Точность: 0%", self)
+        self.acclab.setGeometry(20, 135, 200, 20)
+
         self.labs = []  
         self.started = False
 
@@ -80,18 +83,20 @@ class WPS_test(QWidget):
         self.lab1.hide()
         self.lab2.hide()
         self.lab3.hide()
+        self.acclab.hide()
 
 
-    def new(self):
+    def newTest(self):
         self.lang, ok_pressed = QInputDialog.getItem(self, "Название", "Язык?", ["Русский", "English"], editable=False)
         if ok_pressed:
             self.draw_test()
 
     def draw_menu(self):
-        self.trick_button.show()
+        self.testbtn.show()
 
     def draw_test(self):
-        self.trick_button.hide()
+        self.acclab.show()
+        self.testbtn.hide()
         self.text.show()
         self.text.setReadOnly(True)
         self.btn.show()
@@ -103,11 +108,15 @@ class WPS_test(QWidget):
         self.resize(400, 400)
 
     def start(self):
+        self.starttime = dt.datetime.now()
         self.started = True
         self.text.setReadOnly(False)
         self.lab1.show()
         self.lab2.show()
         self.lab3.show()
+        self.alllets = 0
+        self.corrlets = 0
+        self.accuracy = 0
 
     def keyPressEvent(self, event):
         if not self.started:
@@ -122,12 +131,18 @@ class WPS_test(QWidget):
             return
         self.new = QLabel(self.let, self)
         self.new.setGeometry(52 + 7 * len(self.labs), 159, 7, 20)
+        self.alllets += 1
         if self.let == self.lab2.text()[len(self.labs)]:
             self.new.setStyleSheet("""font-family: "Courier New", monospace; color: 'green'; background-color: 'white';""")
+            self.corrlets += 1
         else:
             self.new.setStyleSheet("""font-family: "Courier New", monospace; color: 'red'; background-color: 'white';""")
         self.new.show()
         self.labs.append(self.new)
+
+        self.accuracy = round(self.alllets / self.corrlets * 100, 1)
+        self.acclab.setText(f"Точность: {self.accuracy}%")
+        self.timenow = self.starttime
 
         if len(self.labs) == len(self.lab2.text()[:-1]):
             next = self.line4
