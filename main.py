@@ -1,23 +1,24 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QRadioButton, QLineEdit
-from PyQt6.QtWidgets import QLabel, QTextEdit
+from PyQt6.QtWidgets import QLabel, QTextEdit, QTableWidget
 from PyQt6.QtCore import Qt
 import datetime as dt
+import sqlite3
 
 
-class WPS_test(QWidget):
+class WPM_test(QWidget):
     def __init__(self):
         super().__init__()
-        self.line1 = "abciiim "
-        self.line2 = "abcmiii "
+        self.line1 = "abc iii m "
+        self.line2 = "ab cm ii i "
         self.line3 = "defghkl "
-        self.line4 = "jmnopqrs "
+        self.line4 = "jmn op qrs "
         self.line5 = "tuvwxyz"
         self.initUI()
 
     def initUI(self):
         self.setGeometry(300, 300, 300, 400)
-        self.setWindowTitle('WPS test')
+        self.setWindowTitle('WPM test')
 
         self.testbtn = QPushButton('Новый тест', self)
         self.testbtn.setGeometry(75, 150, 150, 30)
@@ -98,6 +99,16 @@ class WPS_test(QWidget):
         self.menubtn.hide()
         self.flag = False
 
+        self.testbtn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.resbtn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.menubtn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.s10.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.s15.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.s20.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cust.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.text.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
     def newTest(self):
         self.lang, ok_pressed = QInputDialog.getItem(self, "Название", "Выберите язык", [
                                                      "Русский", "English"], editable=False)
@@ -146,7 +157,6 @@ class WPS_test(QWidget):
         self.lab3.hide()
 
     def start(self):
-        self.starttime = dt.datetime.now()
         self.started = True
         self.lab1.show()
         self.lab2.show()
@@ -155,6 +165,8 @@ class WPS_test(QWidget):
         self.corrlets = 0
         self.accuracy = 0
         self.flag = True
+        self.flag2 = True
+        self.words = 0
 
     def results(self):
         pass
@@ -163,13 +175,18 @@ class WPS_test(QWidget):
         if not self.flag:
             return
 
-        if (dt.datetime.now() - self.starttime).seconds >= (dt.datetime.strptime(str(self.time), "%S")).second:
+        if self.flag2:
+            self.starttime = dt.datetime.now()
+            self.flag2 = False
+
+        if (dt.datetime.now() - self.starttime).seconds >= int(self.time):
             self.endtest()
             return
 
         if not self.started:
             return
         self.let = event.text()
+
         if event.key() == Qt.Key.Key_Backspace:
             if self.labs:
                 if self.labs[-1] == self.lab2.text()[len(self.labs)]:
@@ -184,8 +201,16 @@ class WPS_test(QWidget):
                         self.corrlets / self.alllets * 100, 1)
                     self.acclab.setText(f"Точность: {self.accuracy}%")
             return
+
         if event.key() == Qt.Key.Key_Shift:
             return
+
+        if event.key() == Qt.Key.Key_Space:
+            if len(self.labs) == 0:
+                return
+            if self.let == self.lab2.text()[len(self.labs)]:
+                self.words += 1
+
         self.new = QLabel(self.let, self)
         self.new.setGeometry(52 + 7 * len(self.labs), 215, 7, 20)
         self.alllets += 1
@@ -203,6 +228,7 @@ class WPS_test(QWidget):
             self.acclab.setText(f"Точность: {self.accuracy}%")
 
         if len(self.labs) == len(self.lab2.text()[:-1]):
+            self.words += 1
             next = self.line4
             self.lab1.setText(self.lab2.text())
             self.lab2.setText(self.lab3.text())
@@ -223,10 +249,11 @@ class WPS_test(QWidget):
 
     def endtest(self):
         self.flag = False
-        self.second = EndTest(self.alllets, self.corrlets, self.time)
+        self.second = EndTest(self.alllets, self.corrlets,
+                              self.time, self.words)
         self.second.show()
-        if self.second.closeEvent:
-            self.draw_test()
+        self.second.lab.show()
+        self.draw_test()
 
     def getTime(self):
         if "10 секунд" in self.sender().text():
@@ -279,23 +306,70 @@ class WPS_test(QWidget):
 
 
 class EndTest(QWidget):
-    def __init__(self, all, corr, t):
+    def __init__(self, all, corr, t, words):
         super().__init__()
         self.all = all
         self.corr = corr
         self.t = t
+        self.words = words
         self.initUI()
 
     def initUI(self):
         self.setGeometry(300, 300, 260, 300)
         self.setWindowTitle('Конец теста')
 
-        self.lab = QLabel(f"Конец теста, результаты:")
-        self.lab.setGeometry(100, 10, 160, 20)
+        self.acc = round(self.all / self.corr * 100, 2)
+        self.wpm = self.words * 60 / self.t
+
+        self.lab = QLabel(f"Время кончилось! Результат:", self)
+        self.lab.setGeometry(50, 10, 160, 20)
+
+        self.wpmlab = QLabel(f"WPM = {self.wpm}", self)
+        self.wpmlab.setGeometry(50, 40, 200, 20)
+
+        self.savebtn = QPushButton("Сохранить результат", self)
+        self.savebtn.setGeometry(130, 270, 125, 25)
+        self.savebtn.clicked.connect(self.save)
+
+        self.Nsavebtn = QPushButton("Не сохранять", self)
+        self.Nsavebtn.setGeometry(5, 270, 125, 25)
+        self.Nsavebtn.clicked.connect(self.close)
+
+    def save(self):
+        con = sqlite3.connect(r"sqlite\results.sqlite")
+        cur = con.cursor()
+
+        cur.execute("""CREATE TABLE IF NOT EXISTS results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            all_letters INTEGER NOT NULL,
+            correct_letters INTEGER NOT NULL,
+            time INTEGER NOT NULL,
+            accuracy,
+            words INTEGER NOT NULL,
+            WPM INTEGER NOT NULL,
+            date
+        );""").fetchall()
+
+        cur.execute("""INSERT INTO results(all_letters, correct_letters, time, accuracy, words, WPM, date) VALUES(?, ?, ?, ?, ?, ?, ?)""",
+                     (self.all, self.corr, self.t, self.acc, self.words, self.wpm, dt.datetime.now())).fetchall()
+        con.commit()
+        con.close()
+
+
+class Results(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setGeometry(300, 300, 260, 300)
+        self.setWindowTitle('Конец теста')
+
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = WPS_test()
+    ex = WPM_test()
+    #ex = EndTest(50, 30, 10, 16)
     ex.show()
     sys.exit(app.exec())
