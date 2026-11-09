@@ -112,6 +112,8 @@ class WPM_test(QWidget):
         self.lang, ok_pressed = QInputDialog.getItem(self, "Название", "Выберите язык", [
                                                      "Русский", "English"], editable=False)
         if ok_pressed:
+            with open("lang.txt", "w", encoding="utf8") as f:
+                f.write(self.lang)
             self.draw_test()
 
     def draw_menu(self):
@@ -275,11 +277,16 @@ class WPM_test(QWidget):
         new_size = event.size()
         w = new_size.width()
         h = new_size.height()
-
         add = int(h / 10)
 
-        self.testbtn.setGeometry(
-            int(w / 4), int(h / 2.666), int(w / 2), int(h / 13.33))
+        btn_w = int(w / 2)
+        btn_h = int(h / 13.33)
+        btn_x = int(w / 4)
+        btn_y = int(h / 2.666)
+
+        self.testbtn.setGeometry(btn_x, btn_y, btn_w, btn_h)
+        self.resbtn.setGeometry(btn_x, btn_y + btn_h + 20, btn_w, btn_h)
+
         self.text.setGeometry(int(w / 8), int(h / 2.5) +
                               add, int(w / 1.3), int(h / 2.1))
         self.btn.setGeometry(int(w / 4), int(h / 4) + add,
@@ -300,6 +307,7 @@ class WPM_test(QWidget):
             int(w / 7.69), int(h / 2.09) - 15 + add, int(w / 1.3), int(h / 8))
         self.acclab.setGeometry(
             int(w / 20), int(h / 3.2) + add, int(w / 2), int(h / 8))
+        self.menubtn.setGeometry(int(w / 20), int(h / 20), int(w / 8), int(h / 8))
         for i in range(len(self.labs)):
             self.labs[i].setGeometry(
                 int((52 * w / 400 + 7 * i)), int(h / 1.86), int(w / 57.14), int(h / 20))
