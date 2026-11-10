@@ -4,16 +4,16 @@ from PyQt6.QtWidgets import QLabel, QTextEdit, QTableWidget, QTableWidgetItem
 from PyQt6.QtCore import Qt
 import datetime as dt
 import sqlite3
+import random
+import pymorphy3
 
 
 class WPM_test(QWidget):
     def __init__(self):
         super().__init__()
-        self.line1 = "abc iii m "
-        self.line2 = "ab cm ii i "
-        self.line3 = "defghkl "
-        self.line4 = "jmn op qrs "
-        self.line5 = "tuvwxyz"
+        self.line1 = self.LineGenerator()
+        self.line2 = self.LineGenerator()
+        self.line3 = self.LineGenerator()
         self.initUI()
 
     def initUI(self):
@@ -231,7 +231,7 @@ class WPM_test(QWidget):
 
         if len(self.labs) == len(self.lab2.text()[:-1]):
             self.words += 1
-            next = self.line4
+            next = self.LineGenerator()
             self.lab1.setText(self.lab2.text())
             self.lab2.setText(self.lab3.text())
             self.lab3.setText(next)
@@ -307,10 +307,71 @@ class WPM_test(QWidget):
             int(w / 7.69), int(h / 2.09) - 15 + add, int(w / 1.3), int(h / 8))
         self.acclab.setGeometry(
             int(w / 20), int(h / 3.2) + add, int(w / 2), int(h / 8))
-        self.menubtn.setGeometry(int(w / 20), int(h / 20), int(w / 8), int(h / 8))
+        self.menubtn.setGeometry(int(w / 200), int(h / 200), int(w / 8), int(h / 8))
         for i in range(len(self.labs)):
             self.labs[i].setGeometry(
                 int((52 * w / 400 + 7 * i)), int(h / 1.86), int(w / 57.14), int(h / 20))
+
+    def LineGenerator(self, n=1):
+        ans = []
+        p, s, op, ob = [], [], [], []
+    
+        for _ in range(n):
+            con = sqlite3.connect(r"sqlite\words.sqlite")
+            cur = con.cursor()
+            words = cur.execute("""SELECT * FROM words""").fetchall()
+            con.close()
+            for el in words:
+                if el[-1] == "П":
+                    p.append(el[0])
+                elif el[-1] == "С":
+                    s.append(el[0])
+                elif el[-1] == "Оп":
+                    op.append(el[0])
+                elif el[-1] == "Об":
+                    ob.append(el[0])
+
+        obst = random.choice(ob)
+        if len(obst.split()) == 1:
+            line = random.choice(op) + " " + random.choice(p) + " " + obst + " " + random.choice(s)
+        else:
+            line = random.choice(op) + " " + random.choice(p) + " " + random.choice(s) + " " + obst
+    
+        morph = pymorphy3.MorphAnalyzer()
+        words1 = line.split()
+        gramms = set()
+        for w in words1:
+            parsed = morph.parse(w)[0]
+            if 'NOUN' in parsed.tag:
+                for g in ('masc', 'femn', 'neut', 'plur', 'sing',
+                          'nomn', 'gent', 'datv', 'accs', 'ablt', 'loct'):
+                    if g in parsed.tag:
+                        gramms.add(g)
+                break
+        result = []
+        for w in words1:
+            parsed = morph.parse(w)[0]
+            if 'ADJF' in parsed.tag or 'ADJS' in parsed.tag:
+                target = {g for g in gramms
+                          if g in ('masc', 'femn', 'neut', 'plur', 'sing',
+                                   'nomn', 'gent', 'datv', 'accs', 'ablt', 'loct')}
+                inflected = parsed.inflect(target) if target else parsed
+                result.append(inflected.word if inflected else w)
+                continue
+            if 'INFN' in parsed.tag or 'VERB' in parsed.tag:
+                if 'plur' in gramms:
+                    target = {'pres', 'plur', '3per'}
+                else:
+                    target = {'pres', 'sing', '3per'}
+                inflected = parsed.inflect(target)
+                if not inflected:
+                    inflected = parsed.inflect({'futr', 'sing', '3per'})
+                result.append(inflected.word if inflected else w)
+                continue
+            result.append(w)
+    
+        ans.append(" ".join(result))
+        return ans[0]
 
 
 class EndTest(QWidget):
@@ -362,7 +423,6 @@ class EndTest(QWidget):
         con.commit()
         con.close()
         self.close()
-
 
 class Results(QWidget):
     def __init__(self):
