@@ -68,16 +68,19 @@ class WPM_test(QWidget):
         self.lab1.setGeometry(52, 183, 300, 20)
         self.lab1.setStyleSheet("""font-family: "Courier New", monospace;""")
 
-        self.lab2 = QLabel(self.line1, self)
+        self.lab2 = QLabel("", self)
         self.lab2.setGeometry(52, 199, 300, 20)
         self.lab2.setStyleSheet("""font-family: "Courier New", monospace;""")
 
-        self.lab3 = QLabel(self.line2, self)
+        self.lab3 = QLabel("", self)
         self.lab3.setGeometry(52, 215, 300, 20)
         self.lab3.setStyleSheet("""font-family: "Courier New", monospace;""")
 
         self.acclab = QLabel("Точность: 0%", self)
         self.acclab.setGeometry(20, 175, 200, 20)
+
+        self.erlab = QLabel("", self)
+        self.erlab.setGeometry(200, 120, 200, 20)
 
         self.labs = []
         self.started = False
@@ -130,6 +133,8 @@ class WPM_test(QWidget):
         self.lab1.hide()
         self.lab2.hide()
         self.lab3.hide()
+        self.timeed.hide()
+        self.s10.toggle()
         for el in self.labs:
             el.hide()
         self.labs = []
@@ -168,6 +173,11 @@ class WPM_test(QWidget):
         self.flag = True
         self.flag2 = True
         self.words = 0
+        self.lab1.setText("")
+        self.lab2.setText(self.LineGenerator())
+        self.lab3.setText(self.LineGenerator())
+        self.setFocus()
+
 
     def results(self):
         self.resmenu = Results()
@@ -267,11 +277,13 @@ class WPM_test(QWidget):
         elif "20 секунд" in self.sender().text():
             self.time = 20
             self.timeed.hide()
-        elif "Своё время" == self.sender().text():
+        else:
             self.timeed.show()
             self.time = self.timeed.text()
-        else:
-            self.time = self.timeed.text()
+            if not self.timeed.text().isdigit():
+                self.erlab.setText("Пожалуйста, введите целое число")
+            else:
+                self.erlab.setText("")
 
     def resizeEvent(self, event):
         new_size = event.size()
@@ -371,7 +383,7 @@ class WPM_test(QWidget):
             result.append(w)
     
         ans.append(" ".join(result))
-        return ans[0]
+        return ans[0] + " "
 
 
 class EndTest(QWidget):
@@ -388,12 +400,12 @@ class EndTest(QWidget):
         self.setWindowTitle('Конец теста')
 
         self.acc = round(self.corr / self.all * 100, 2)
-        self.wpm = self.words * 60 / self.t
+        self.wpm = self.words * 60 / int(self.t)
 
         self.lab = QLabel(f"Время кончилось! Результат:", self)
         self.lab.setGeometry(50, 10, 160, 20)
 
-        self.wpmlab = QLabel(f"WPM = {self.wpm}", self)
+        self.wpmlab = QLabel(f"Слов в минуту - {self.wpm}", self)
         self.wpmlab.setGeometry(50, 40, 200, 20)
 
         self.savebtn = QPushButton("Сохранить результат", self)

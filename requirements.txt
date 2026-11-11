@@ -1,1 +1,3 @@
 PyQt6
+pymorphy3
+pymorphy3-dicts-ru
