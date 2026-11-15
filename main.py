@@ -2,6 +2,7 @@ import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QRadioButton, QLineEdit
 from PyQt6.QtWidgets import QLabel, QTextEdit, QTableWidget, QTableWidgetItem
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 import datetime as dt
 import sqlite3
 import random
@@ -11,13 +12,10 @@ import pymorphy3
 class WPM_test(QWidget):
     def __init__(self):
         super().__init__()
-        self.line1 = self.LineGenerator()
-        self.line2 = self.LineGenerator()
-        self.line3 = self.LineGenerator()
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(300, 300, 300, 400)
+        self.setGeometry(300, 300, 400, 400)
         self.setWindowTitle('WPM test')
 
         self.testbtn = QPushButton('Новый тест', self)
@@ -82,9 +80,26 @@ class WPM_test(QWidget):
         self.erlab = QLabel("", self)
         self.erlab.setGeometry(200, 120, 200, 20)
 
+        self.pick1 = QPixmap(r'pictures\gentleman.png').scaled(150, 150)
+        self.im1 = QLabel(self)
+        self.im1.move(250, 250)
+        self.im1.setPixmap(self.pick1)
+
+        self.pick2 = QPixmap(r'pictures\lady.png').scaled(90, 160)
+        self.im2 = QLabel(self)
+        self.im2.move(10, 10)
+        self.im2.setPixmap(self.pick2)
+
+        self.namelab1 = QLabel("Тест На Скорость Печати", self)
+        self.namelab1.setGeometry(120, 30, 300, 60)
+        self.namelab1.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.namelab2 = QLabel("Проверь свою скорость печати\nменьше чем за минуту", self)
+        self.namelab2.setGeometry(120, 70, 200, 40)
+
         self.labs = []
         self.started = False
         self.time = 10
+        self.lang = "English"
 
         self.text.hide()
         self.btn.hide()
@@ -115,14 +130,16 @@ class WPM_test(QWidget):
         self.lang, ok_pressed = QInputDialog.getItem(self, "Название", "Выберите язык", [
                                                      "Русский", "English"], editable=False)
         if ok_pressed:
-            with open("lang.txt", "w", encoding="utf8") as f:
-                f.write(self.lang)
             self.draw_test()
 
     def draw_menu(self):
         self.acclab.hide()
         self.testbtn.show()
         self.resbtn.show()
+        self.namelab1.show()
+        self.namelab2.show()
+        self.im1.show()
+        self.im2.show()
         self.text.hide()
         self.btn.hide()
         self.s10.hide()
@@ -139,7 +156,6 @@ class WPM_test(QWidget):
             el.hide()
         self.labs = []
         self.menubtn.hide()
-        self.resize(300, 400)
 
     def draw_test(self):
         self.acclab.show()
@@ -161,6 +177,10 @@ class WPM_test(QWidget):
         self.lab1.hide()
         self.lab2.hide()
         self.lab3.hide()
+        self.namelab1.hide()
+        self.namelab2.hide()
+        self.im1.hide()
+        self.im2.hide()
 
     def start(self):
         self.started = True
@@ -177,7 +197,6 @@ class WPM_test(QWidget):
         self.lab2.setText(self.LineGenerator())
         self.lab3.setText(self.LineGenerator())
         self.setFocus()
-
 
     def results(self):
         self.resmenu = Results()
@@ -201,9 +220,8 @@ class WPM_test(QWidget):
 
         if event.key() == Qt.Key.Key_Backspace:
             if self.labs:
-                if self.labs[-1] == self.lab2.text()[len(self.labs)]:
-                    pass
-                self.corrlets -= 1
+                if "'green'" in self.labs[-1].styleSheet():
+                    self.corrlets -= 1
                 self.alllets -= 1
 
                 self.labs[-1].hide()
@@ -319,36 +337,53 @@ class WPM_test(QWidget):
             int(w / 7.69), int(h / 2.09) - 15 + add, int(w / 1.3), int(h / 8))
         self.acclab.setGeometry(
             int(w / 20), int(h / 3.2) + add, int(w / 2), int(h / 8))
-        self.menubtn.setGeometry(int(w / 200), int(h / 200), int(w / 8), int(h / 8))
+        self.menubtn.setGeometry(
+            int(w / 200), int(h / 200), int(w / 8), int(h / 8))
         for i in range(len(self.labs)):
             self.labs[i].setGeometry(
                 int((52 * w / 400 + 7 * i)), int(h / 1.86), int(w / 57.14), int(h / 20))
 
-    def LineGenerator(self, n=1):
-        ans = []
+    def LineGenerator(self):
         p, s, op, ob = [], [], [], []
-    
-        for _ in range(n):
-            con = sqlite3.connect(r"sqlite\words.sqlite")
-            cur = con.cursor()
-            words = cur.execute("""SELECT * FROM words""").fetchall()
-            con.close()
+
+        con = sqlite3.connect(r"sqlite\words.sqlite")
+        cur = con.cursor()
+        words = cur.execute("""SELECT * FROM words""").fetchall()
+        con.close()
+        if self.lang == "English":
             for el in words:
-                if el[-1] == "П":
+                if el[-1] == "П" and el[1] == "EN":
                     p.append(el[0])
-                elif el[-1] == "С":
+                elif el[-1] == "С" and el[1] == "EN":
                     s.append(el[0])
-                elif el[-1] == "Оп":
+                elif el[-1] == "Оп" and el[1] == "EN":
                     op.append(el[0])
-                elif el[-1] == "Об":
+                elif el[-1] == "Об" and el[1] == "EN":
                     ob.append(el[0])
+
+            line = random.choice(op) + " " + random.choice(p) + " " + random.choice(
+                ob) + " " + random.choice(s) + " " + random.choice(op) + " " + random.choice(p)
+            return line + ' '
+        
+        p, s, op, ob = [], [], [], []
+        for el in words:
+            if el[-1] == "П" and el[1] == "RU":
+                p.append(el[0])
+            elif el[-1] == "С" and el[1] == "RU":
+                s.append(el[0])
+            elif el[-1] == "Оп" and el[1] == "RU":
+                op.append(el[0])
+            elif el[-1] == "Об" and el[1] == "RU":
+                ob.append(el[0])
 
         obst = random.choice(ob)
         if len(obst.split()) == 1:
-            line = random.choice(op) + " " + random.choice(p) + " " + obst + " " + random.choice(s)
+            line = random.choice(op) + " " + random.choice(p) + \
+                " " + obst + " " + random.choice(s)
         else:
-            line = random.choice(op) + " " + random.choice(p) + " " + random.choice(s) + " " + obst
-    
+            line = random.choice(op) + " " + random.choice(p) + \
+                " " + random.choice(s) + " " + obst
+
         morph = pymorphy3.MorphAnalyzer()
         words1 = line.split()
         gramms = set()
@@ -381,9 +416,8 @@ class WPM_test(QWidget):
                 result.append(inflected.word if inflected else w)
                 continue
             result.append(w)
-    
-        ans.append(" ".join(result))
-        return ans[0] + " "
+
+        return " ".join(result) + " "
 
 
 class EndTest(QWidget):
@@ -399,13 +433,16 @@ class EndTest(QWidget):
         self.setGeometry(300, 300, 260, 300)
         self.setWindowTitle('Конец теста')
 
-        self.acc = round(self.corr / self.all * 100, 2)
+        if self.all == 0:
+            self.acc = 0
+        else:
+            self.acc = round(self.corr / self.all * 100, 2)
         self.wpm = self.words * 60 / int(self.t)
 
         self.lab = QLabel(f"Время кончилось! Результат:", self)
         self.lab.setGeometry(50, 10, 160, 20)
 
-        self.wpmlab = QLabel(f"Слов в минуту - {self.wpm}", self)
+        self.wpmlab = QLabel(f"Слов в минуту - {round(self.wpm, 2)}", self)
         self.wpmlab.setGeometry(50, 40, 200, 20)
 
         self.savebtn = QPushButton("Сохранить результат", self)
@@ -431,10 +468,11 @@ class EndTest(QWidget):
         );""").fetchall()
 
         cur.execute("""INSERT INTO results(all_letters, correct_letters, time, accuracy, words, WPM, date) VALUES(?, ?, ?, ?, ?, ?, ?)""",
-                     (self.all, self.corr, self.t, self.acc, self.words, self.wpm, dt.datetime.strftime(dt.datetime.now(), "%d.%m %H:%M"))).fetchall()
+                    (self.all, self.corr, self.t, self.acc, self.words, self.wpm, dt.datetime.strftime(dt.datetime.now(), "%d.%m %H:%M"))).fetchall()
         con.commit()
         con.close()
         self.close()
+
 
 class Results(QWidget):
     def __init__(self):
@@ -468,17 +506,18 @@ class Results(QWidget):
         self.table.setRowCount(len(self.lst))
         for y in range(7):
             for x in range(len(self.lst)):
-                self.table.setItem(x, y, QTableWidgetItem(str(self.lst[x - 1][y])))
+                self.table.setItem(
+                    x, y, QTableWidgetItem(str(self.lst[x - 1][y])))
 
-        self.table.setHorizontalHeaderLabels(["Все\nбуквы", "Правильно\nнаписанные\nбуквы", "Время\nтеста", "Точность", "Написано\nслов", "Слов в\nминуту", "Дата\nтеста"])
+        self.table.setHorizontalHeaderLabels(["Все\nбуквы", "Правильно\nнаписанные\nбуквы",
+                                             "Время\nтеста", "Точность", "Написано\nслов", "Слов в\nминуту", "Дата\nтеста"])
         self.table.resizeColumnsToContents()
-
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = WPM_test()
-    #ex = EndTest(50, 30, 10, 16)
-    #ex = Results()
+    # ex = EndTest(50, 30, 10, 16)
+    # ex = Results()
     ex.show()
     sys.exit(app.exec())
