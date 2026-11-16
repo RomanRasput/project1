@@ -1,12 +1,14 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QRadioButton, QLineEdit
-from PyQt6.QtWidgets import QLabel, QTextEdit, QTableWidget, QTableWidgetItem
+from PyQt6.QtWidgets import QLabel, QTextEdit, QMessageBox
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 import datetime as dt
 import sqlite3
 import random
 import pymorphy3
+from python_files.results import Results
+from python_files.endTest import EndTest
 
 
 class WPM_test(QWidget):
@@ -172,7 +174,6 @@ class WPM_test(QWidget):
         for el in self.labs:
             el.hide()
         self.labs = []
-        self.resize(400, 400)
         self.acclab.setText("Точность: 0%")
         self.lab1.hide()
         self.lab2.hide()
@@ -419,105 +420,22 @@ class WPM_test(QWidget):
 
         return " ".join(result) + " "
 
-
-class EndTest(QWidget):
-    def __init__(self, all, corr, t, words):
-        super().__init__()
-        self.all = all
-        self.corr = corr
-        self.t = t
-        self.words = words
-        self.initUI()
-
-    def initUI(self):
-        self.setGeometry(300, 300, 260, 300)
-        self.setWindowTitle('Конец теста')
-
-        if self.all == 0:
-            self.acc = 0
+    def closeEvent(self, event):
+        reply = QMessageBox.question(
+            self, 
+            'Подтверждение', 
+            'Вы уверены, что хотите закрыть приложение?',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+            QMessageBox.StandardButton.No
+        )
+        if reply == 16384:
+            self.close()
         else:
-            self.acc = round(self.corr / self.all * 100, 2)
-        self.wpm = self.words * 60 / int(self.t)
-
-        self.lab = QLabel(f"Время кончилось! Результат:", self)
-        self.lab.setGeometry(50, 10, 160, 20)
-
-        self.wpmlab = QLabel(f"Слов в минуту - {round(self.wpm, 2)}", self)
-        self.wpmlab.setGeometry(50, 40, 200, 20)
-
-        self.savebtn = QPushButton("Сохранить результат", self)
-        self.savebtn.setGeometry(130, 270, 125, 25)
-        self.savebtn.clicked.connect(self.save)
-
-        self.Nsavebtn = QPushButton("Не сохранять", self)
-        self.Nsavebtn.setGeometry(5, 270, 125, 25)
-        self.Nsavebtn.clicked.connect(self.close)
-
-    def save(self):
-        con = sqlite3.connect(r"sqlite\results.sqlite")
-        cur = con.cursor()
-
-        cur.execute("""CREATE TABLE IF NOT EXISTS results (
-            all_letters INTEGER NOT NULL,
-            correct_letters INTEGER NOT NULL,
-            time INTEGER NOT NULL,
-            accuracy NOT NULL,
-            words INTEGER NOT NULL,
-            WPM NOT NULL,
-            date NOT NULL
-        );""").fetchall()
-
-        cur.execute("""INSERT INTO results(all_letters, correct_letters, time, accuracy, words, WPM, date) VALUES(?, ?, ?, ?, ?, ?, ?)""",
-                    (self.all, self.corr, self.t, self.acc, self.words, self.wpm, dt.datetime.strftime(dt.datetime.now(), "%d.%m %H:%M"))).fetchall()
-        con.commit()
-        con.close()
-        self.close()
-
-
-class Results(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
-
-    def initUI(self):
-        self.setGeometry(300, 300, 450, 350)
-        self.setWindowTitle('Результаты')
-
-        self.table = QTableWidget(self)
-        self.table.setGeometry(10, 70, 430, 270)
-
-        self.lab = QLabel("Ваши результаты тестов:", self)
-        self.lab.setGeometry(10, 50, 200, 20)
-
-        self.updbtn = QPushButton(self)
-        self.updbtn.setGeometry(10, 70, 15, 15)
-        self.updbtn.clicked.connect(self.upd)
-
-        self.upd()
-
-    def upd(self):
-        con = sqlite3.connect(r"sqlite\results.sqlite")
-        cur = con.cursor()
-        self.lst = []
-        self.lst = cur.execute("""SELECT * FROM results""").fetchall()
-        con.close()
-
-        self.table.setColumnCount(7)
-        self.table.setRowCount(len(self.lst))
-        for y in range(7):
-            for x in range(len(self.lst)):
-                self.table.setItem(
-                    x, y, QTableWidgetItem(str(self.lst[x - 1][y])))
-
-        self.table.setHorizontalHeaderLabels(["Все\nбуквы", "Правильно\nнаписанные\nбуквы",
-                                             "Время\nтеста", "Точность", "Написано\nслов", "Слов в\nминуту", "Дата\nтеста"])
-        self.table.resizeColumnsToContents()
+            event.ignore()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = WPM_test()
-    # ex = EndTest(50, 30, 10, 16)
-    # ex = Results()
     ex.show()
     sys.exit(app.exec())
