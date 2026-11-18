@@ -7,8 +7,8 @@ import datetime as dt
 import sqlite3
 import random
 import pymorphy3
-from python_files.results import Results
-from python_files.endTest import EndTest
+from classes.results import Results
+from classes.endTest import EndTest
 
 
 class WPM_test(QWidget):

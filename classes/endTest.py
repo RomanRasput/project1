@@ -56,3 +56,11 @@ class EndTest(QWidget):
         con.commit()
         con.close()
         self.close()
+
+    def resizeEvent(self, event):
+        new_size = event.size()
+        w = new_size.width()
+        h = new_size.height()
+
+        self.savebtn.setGeometry(int(w / 2), int(h / 1.11), int(w / 2.1), int(h / 12))
+        self.Nsavebtn.setGeometry(int(w / 52), int(h / 1.11), int(w / 2.1), int(h / 12))

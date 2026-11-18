@@ -46,4 +46,10 @@ class Results(QWidget):
 
         self.table.setHorizontalHeaderLabels(["Все\nбуквы", "Правильно\nнаписанные\nбуквы",
                                              "Время\nтеста", "Точность", "Написано\nслов", "Слов в\nминуту", "Дата\nтеста"])
-        self.table.resizeColumnsToContents()
+
+    def resizeEvent(self, event):
+        new_size = event.size()
+        w = new_size.width()
+        h = new_size.height()
+
+        self.table.setGeometry(10, 70, w - 20, h - 80)
