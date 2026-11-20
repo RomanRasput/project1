@@ -82,15 +82,15 @@ class WPM_test(QWidget):
         self.erlab = QLabel("", self)
         self.erlab.setGeometry(200, 120, 200, 20)
 
-        self.pick1 = QPixmap(r'pictures\gentleman.png').scaled(150, 150)
+        self.pic1 = QPixmap(r'pictures\gentleman.png').scaled(150, 150)
         self.im1 = QLabel(self)
         self.im1.move(250, 250)
-        self.im1.setPixmap(self.pick1)
+        self.im1.setPixmap(self.pic1)
 
-        self.pick2 = QPixmap(r'pictures\lady.png').scaled(90, 160)
+        self.pic2 = QPixmap(r'pictures\lady.png').scaled(90, 160)
         self.im2 = QLabel(self)
         self.im2.move(10, 10)
-        self.im2.setPixmap(self.pick2)
+        self.im2.setPixmap(self.pic2)
 
         self.namelab1 = QLabel("Тест На Скорость Печати", self)
         self.namelab1.setGeometry(120, 30, 300, 60)
@@ -340,6 +340,17 @@ class WPM_test(QWidget):
             int(w / 20), int(h / 3.2) + add, int(w / 2), int(h / 8))
         self.menubtn.setGeometry(
             int(w / 200), int(h / 200), int(w / 8), int(h / 8))
+        self.im1.move(int(w / 1.6), int(h / 1.6))
+        self.im2.move(int(w / 40), int(h / 40))
+
+        self.pic1 = QPixmap(r'pictures\gentleman.png').scaled(int(w / 2.66), int(h / 2.66))
+        self.im1.setPixmap(self.pic1)
+        self.pic2 = QPixmap(r'pictures\lady.png').scaled(int(w / 4.44), int(h / 2.5))
+        self.im2.setPixmap(self.pic2)
+
+        self.namelab1.setGeometry(int(w / 3.33), int(h / 13.33), int(w / 1.33), int(h / 6.66))
+        self.namelab2.setGeometry(int(w / 3.33), int(h / 5.71), int(w / 2), int(h /10))
+
         for i in range(len(self.labs)):
             self.labs[i].setGeometry(
                 int((52 * w / 400 + 7 * i)), int(h / 1.86), int(w / 57.14), int(h / 20))
